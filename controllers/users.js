@@ -33,8 +33,14 @@ module.exports.createProfile = (req, res, next) => {
 
 module.exports.patchProfile = (req, res, next) => {
   const { name, about } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, about })
-    .then((user) => res.send(user))
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        res.status(404).send({ message: 'Не найдено' });
+        return;
+      }
+      res.send(user);
+    })
     .catch((err) => {
       next(err);
     });
@@ -42,8 +48,14 @@ module.exports.patchProfile = (req, res, next) => {
 
 module.exports.patchAvatar = (req, res, next) => {
   const { avatar } = req.body;
-  User.findByIdAndUpdate(req.user._id, { avatar })
-    .then((user) => res.send(user))
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+    .then((user) => {
+      if (!user) {
+        res.status(404).send({ message: 'Не найдено' });
+        return;
+      }
+      res.send(user);
+    })
     .catch((err) => {
       next(err);
     });
