@@ -1,3 +1,4 @@
+const { BAD_REQUEST, NOT_FOUND, INTERNAL_SERVER_ERROR } = require('./utils/constants');
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -17,15 +18,18 @@ app.use((req, res, next) => {
 app.use('/users', require('./routes/users'));
 app.use('/cards', require('./routes/cards'));
 
-app.use((err, req, res, next) => {
-  if (err.name === 'CastError' || err.name === 'ValidationError') {
-    res.status(400).send({ message: `Переданы некорректные данные: ${err.message}` });
-  }
-  next();
+app.use((req, res) => {
+  res.status(NOT_FOUND).send({ message: 'Страницы не существует' });
+  return;
 });
 
-app.use((req, res) => {
-  res.status(500).send({ message: 'Произошла непредвиденная ошибка' });
+app.use((err, req, res, next) => {
+  if (err.name === 'CastError' || err.name === 'ValidationError') {
+    res.status(BAD_REQUEST).send({ message: `Переданы некорректные данные: ${err.message}` });
+    return;
+  }
+  res.status(INTERNAL_SERVER_ERROR).send({ message: 'Произошла непредвиденная ошибка' });
+  return;
 });
 
 app.listen(PORT, () => {

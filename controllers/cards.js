@@ -1,4 +1,5 @@
 const Card = require('../models/cards');
+const { NOT_FOUND } = require('../utils/constants');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -21,7 +22,7 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findByIdAndRemove(req.params.cardId)
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Не найдено' });
+        res.status(NOT_FOUND).send({ message: 'Не найдено' });
         return;
       }
       res.send({ message: `Карточка ${card._id} удалена` });
@@ -35,7 +36,7 @@ module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Не найдено' });
+        res.status(NOT_FOUND).send({ message: 'Не найдено' });
         return;
       }
       res.send(card);
@@ -49,7 +50,7 @@ module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .then((card) => {
       if (!card) {
-        res.status(404).send({ message: 'Не найдено' });
+        res.status(NOT_FOUND).send({ message: 'Не найдено' });
         return;
       }
       res.send(card);
