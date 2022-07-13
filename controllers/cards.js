@@ -1,5 +1,5 @@
 const Card = require('../models/cards');
-const { NOT_FOUND } = require('../utils/constants');
+const { NOT_FOUND, FORBIDDEN } = require('../utils/constants');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -19,10 +19,15 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  const { cardId } = req.params;
+
+  Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) {
         res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        return;
+      } if (JSON.stringify(card.owner) !== JSON.stringify(req.user._id)) {
+        res.status(FORBIDDEN).send({ message: 'Невозможно удалить карточку другого пользователя' });
         return;
       }
       res.send({ message: `Карточка ${card._id} удалена` });
