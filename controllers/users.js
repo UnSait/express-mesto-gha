@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const User = require('../models/users');
-const { NOT_FOUND, CREATED } = require('../utils/constants');
+const NotFound = require('../utils/Errors/NotFound');
+const Conflict = require('../utils/Errors/Conflict');
 
 module.exports.getAllUsers = (req, res, next) => {
   User.find({})
@@ -16,7 +17,7 @@ module.exports.getUser = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(user);
@@ -30,7 +31,7 @@ module.exports.getRequestedUser = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(user);
@@ -51,11 +52,15 @@ module.exports.createUser = (req, res, next) => {
       },
     ))
     .then((user) => {
-      res.status(CREATED).send({
+      res.send({
         name: user.name, about: user.about, avatar: user.avatar, email: user.email,
       });
     })
     .catch((err) => {
+      if (err.code === 11000) {
+        next(new Conflict('Пользователь уже существует'));
+        return;
+      }
       next(err);
     });
 };
@@ -65,7 +70,7 @@ module.exports.patchProfile = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(user);
@@ -80,7 +85,7 @@ module.exports.patchAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(user);

@@ -1,5 +1,6 @@
 const Card = require('../models/cards');
-const { NOT_FOUND, FORBIDDEN } = require('../utils/constants');
+const NotFound = require('../utils/Errors/NotFound');
+const Forbidden = require('../utils/Errors/Forbidden');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -21,16 +22,19 @@ module.exports.createCard = (req, res, next) => {
 module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
 
-  Card.findByIdAndRemove(cardId)
+  Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
-        return;
+        next(new NotFound('Не найдено'));
+        return {};
       } if (JSON.stringify(card.owner) !== JSON.stringify(req.user._id)) {
-        res.status(FORBIDDEN).send({ message: 'Невозможно удалить карточку другого пользователя' });
-        return;
+        next(new Forbidden('Невозможно удалить карточку другого пользователя'));
+        return {};
       }
-      res.send({ message: `Карточка ${card._id} удалена` });
+      return Card.findByIdAndRemove(cardId);
+    })
+    .then(() => {
+      res.send({ message: 'Карточка удалена' });
     })
     .catch((err) => {
       next(err);
@@ -41,7 +45,7 @@ module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(card);
@@ -55,7 +59,7 @@ module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .then((card) => {
       if (!card) {
-        res.status(NOT_FOUND).send({ message: 'Не найдено' });
+        next(new NotFound('Не найдено'));
         return;
       }
       res.send(card);
