@@ -1,6 +1,7 @@
 const Card = require('../models/cards');
 const NotFound = require('../utils/Errors/NotFound');
 const Forbidden = require('../utils/Errors/Forbidden');
+const BadRequest = require('../utils/Errors/BadRequest');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -15,6 +16,10 @@ module.exports.createCard = (req, res, next) => {
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send(card))
     .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
+        return;
+      }
       next(err);
     });
 };
@@ -25,16 +30,13 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(cardId)
     .then((card) => {
       if (!card) {
-        next(new NotFound('Не найдено'));
-        return {};
+        return next(new NotFound('Не найдено'));
       } if (JSON.stringify(card.owner) !== JSON.stringify(req.user._id)) {
-        next(new Forbidden('Невозможно удалить карточку другого пользователя'));
-        return {};
+        return next(new Forbidden('Невозможно удалить карточку другого пользователя'));
       }
-      return Card.findByIdAndRemove(cardId);
-    })
-    .then(() => {
-      res.send({ message: 'Карточка удалена' });
+      return Card.findByIdAndRemove(cardId).then(() => {
+        res.send({ message: 'Карточка удалена' });
+      });
     })
     .catch((err) => {
       next(err);

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/users');
 const NotFound = require('../utils/Errors/NotFound');
 const Conflict = require('../utils/Errors/Conflict');
+const BadRequest = require('../utils/Errors/BadRequest');
 
 module.exports.getAllUsers = (req, res, next) => {
   User.find({})
@@ -60,6 +61,9 @@ module.exports.createUser = (req, res, next) => {
       if (err.code === 11000) {
         next(new Conflict('Пользователь уже существует'));
         return;
+      } if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
+        return;
       }
       next(err);
     });
@@ -76,6 +80,10 @@ module.exports.patchProfile = (req, res, next) => {
       res.send(user);
     })
     .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
+        return;
+      }
       next(err);
     });
 };
@@ -91,6 +99,10 @@ module.exports.patchAvatar = (req, res, next) => {
       res.send(user);
     })
     .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
+        return;
+      }
       next(err);
     });
 };
